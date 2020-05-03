@@ -10,50 +10,31 @@ function fcd {
 
 # 指定したgitにブランチをスウィッチする
 function gitb {
-  BRANCH=`git branch | peco | sed -e "s/\* //g" | awk "{print \$1}"`
-  if [ -z $BRANCH ];then
-    exit 1
-  fi
-  echo `Checkout branch:`$BRANCH
-  git checkout $BRANCH
+  git checkout `git branch | peco | sed -e "s/\* //g" | awk "{print \$1}"`
 }
 
 # 指定したgitのタグをcheckoutする
 function gitt {
-  TAG=`git tag | peco`
-  if [ -z $TAG ];then
-    exit 1
-  fi
-  echo `Checkout tag:`$TAG
-  git checkout $TAG
+  git checkout  `git tag | peco`
 }
 
 # 指定したgitのリポジトリをpullして現在のリポジトリへ戻る
 # git pull and back
 function gitpb {
-   CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+   CURB=`git rev-parse --abbrev-ref HEAD`
    gitb
    wait
    git pull
    wait
-   git checkout $CURRENT_BRANCH
+   git checkout $CURB
 }
 
 # 指定したgitのリポジトリを現在のリポジトリへマージ
 function gitm {
-  BRANCH=`git branch | peco | sed -e "s/\* //g" | awk "{print \$1}"`
-  if [ -z $BRANCH ];then
-    exit 1
-  fi
-  echo 'Merge '$BRANCH' to current branch'
-  git merge
+   git merge `git branch | peco | sed -e "s/\* //g" | awk "{print \$1}"`
 }
 
 function gitc {
-  echo 'create new branch '$1
-  if [ -z $1 ];then
-    exit 1
-  fi
   git branch $1
   git checkout $1
 }
@@ -61,10 +42,46 @@ function gitc {
 function gitch {
   git fetch
   REMOTE=`git branch -r | peco | sed -e "s/\* //g" | awk "{print \$1}"`
-  if [ -z $REMOTE ];then
-    exit 1
-  fi
   CHECKOUT=`echo $REMOTE | sed -e "s/origin\///g"`
-  echo 'Checkout remote branch '$CHECKOUT
-  git checkou -zb $CHECKOUT $REMOTE
+  git checkout -b $CHECKOUT $REMOTE
+}
+
+
+function gitss {
+  git stash save
+}
+
+function gitsa {
+  STASH=`git stash list | peco | sed -e "s/\:.*//"`
+  git stash apply $STASH
+}
+
+function gitsr {
+  STASH=`git stash list | peco | sed -e "s/\:.*//"`
+  git stash drop $STASH
+}
+
+CONFIG_FILE="${HOME}/.commands/gg_config"
+
+function gcd {
+  REPO_PATH=`cat ${CONFIG_FILE} | peco`
+  cd $REPO_PATH
+}
+
+function gg {
+    if [ "$1" == "-l" ]; then
+      REPO_PATH=`cat ${CONFIG_FILE} | peco`
+      sed -e 's|'$REPO_PATH'||g' $CONFIG_FILE
+    else 
+      if [ -e "./.git" ]; then
+        STR=`echo $(pwd)`
+        if [ ! `cat ${CONFIG_FILE} | grep ${STR}` ]; then
+         echo $(pwd) >> $CONFIG_FILE
+        else 
+         echo "already registered!"
+        fi 
+      else 
+        echo "not git repository"
+      fi
+    fi
 }
